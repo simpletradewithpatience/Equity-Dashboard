@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STWP Equity Snapshots</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f0;color:#1a1a1a;min-height:100vh}
+  .app{max-width:480px;margin:0 auto;background:#fff;min-height:100vh}
+  .header{padding:1rem 1rem 0.5rem;border-bottom:0.5px solid #e0e0d8;background:#fff;position:sticky;top:0;z-index:10}
+  .title{font-size:18px;font-weight:600;color:#1a1a1a}
+  .subtitle{font-size:13px;color:#888;margin-top:2px}
+  .filters{display:flex;gap:8px;padding:0.75rem 1rem;flex-wrap:wrap;background:#fff;border-bottom:0.5px solid #e0e0d8;position:sticky;top:62px;z-index:9}
+  .pill{font-size:12px;padding:5px 12px;border-radius:20px;border:0.5px solid #ccc;background:#fff;color:#666;cursor:pointer;transition:all 0.15s;white-space:nowrap}
+  .pill.active{background:#e8f0fe;color:#1a56db;border-color:#a5b4fc}
+  .search{margin:0.75rem 1rem 0;position:relative}
+  .search input{width:100%;padding:9px 12px 9px 36px;border-radius:10px;border:0.5px solid #ccc;background:#f7f7f3;color:#1a1a1a;font-size:14px;outline:none}
+  .search input:focus{border-color:#a5b4fc;background:#fff}
+  .search i{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#888;font-size:16px}
+  .count{font-size:12px;color:#888;padding:0.5rem 1rem 0.25rem}
+  .cards{padding:0.5rem 1rem 1rem;display:flex;flex-direction:column;gap:10px}
+  .card{background:#fff;border:0.5px solid #e0e0d8;border-radius:14px;padding:1rem;transition:box-shadow 0.15s}
+  .card:active{box-shadow:0 2px 12px rgba(0,0,0,0.08)}
+  .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .stock-name{font-size:16px;font-weight:600;color:#1a1a1a}
+  .badges{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .badge{font-size:11px;padding:3px 9px;border-radius:12px;font-weight:500}
+  .badge-bull{background:#d1fae5;color:#065f46}
+  .badge-neut{background:#f3f4f6;color:#4b5563}
+  .badge-chg{background:#eff6ff;color:#1e40af}
+  .metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .metric{background:#f7f7f3;border-radius:8px;padding:8px 10px}
+  .metric-label{font-size:11px;color:#888;margin-bottom:2px}
+  .metric-val{font-size:13px;font-weight:500;color:#1a1a1a}
+  .rsi-bar-wrap{height:3px;border-radius:2px;background:#e5e7eb;margin-top:5px;overflow:hidden}
+  .rsi-bar{height:3px;border-radius:2px;background:#10b981;transition:width 0.3s}
+  .rsi-bar.amber{background:#f59e0b}
+  .rsi-bar.red{background:#ef4444}
+  .expand-section{margin-top:10px;padding-top:10px;border-top:0.5px solid #e0e0d8;display:none}
+  .expand-section.open{display:block}
+  .section-title{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;margin-top:12px}
+  .section-title:first-child{margin-top:0}
+  .level-row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:0.5px solid #f0f0ea;color:#1a1a1a}
+  .level-row:last-child{border:none}
+  .level-label{color:#888}
+  .outlook-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:4px}
+  .outlook-item{font-size:12px;color:#888;background:#f7f7f3;border-radius:8px;padding:8px 10px}
+  .outlook-val{font-weight:600;color:#1a1a1a;font-size:13px;margin-top:2px}
+  .toggle-btn{font-size:12px;color:#1a56db;margin-top:10px;background:none;border:none;cursor:pointer;padding:0;display:flex;align-items:center;gap:4px;font-family:inherit}
+  .disclaimer{margin:1rem;padding:1rem;background:#fef9ee;border-radius:10px;border:0.5px solid #fcd34d;font-size:11px;color:#78350f;line-height:1.6}
+  .disclaimer strong{display:block;margin-bottom:4px;font-size:12px}
+  .no-results{text-align:center;padding:3rem 1rem;color:#888;font-size:14px}
+  .up-val{color:#059669;font-weight:500}
+  .dn-val{color:#dc2626;font-weight:500}
+  @media(prefers-color-scheme:dark){
+    body{background:#111;color:#f0f0f0}
+    .app{background:#1a1a1a}
+    .header,.filters{background:#1a1a1a;border-color:#333}
+    .card{background:#242424;border-color:#333}
+    .metric,.outlook-item{background:#2c2c2c}
+    .metric-label,.level-label,.outlook-item,.count,.subtitle{color:#aaa}
+    .metric-val,.stock-name,.level-row,.outlook-val,.title{color:#f0f0f0}
+    .search input{background:#2c2c2c;border-color:#444;color:#f0f0f0}
+    .pill{background:#1a1a1a;color:#aaa;border-color:#444}
+    .pill.active{background:#1e2a5a;color:#93c5fd;border-color:#3b5abf}
+    .level-row{border-color:#333}
+    .rsi-bar-wrap{background:#333}
+    .expand-section{border-color:#333}
+    .badge-bull{background:#064e3b;color:#6ee7b7}
+    .badge-neut{background:#2c2c2c;color:#9ca3af}
+    .badge-chg{background:#1e3a5f;color:#93c5fd}
+    .disclaimer{background:#2d1f00;border-color:#92400e;color:#fcd34d}
+    .section-title{color:#777}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="title">📊 STWP Equity Snapshots</div>
+    <div class="subtitle">Tap any stock to view full levels</div>
+  </div>
+
+  <div class="filters">
+    <span class="pill active" onclick="setFilter('all',this)">All</span>
+    <span class="pill" onclick="setFilter('Bullish',this)">Bullish</span>
+    <span class="pill" onclick="setFilter('Neutral',this)">Neutral</span>
+    <span class="pill" onclick="setFilter('Up',this)">Trend Up</span>
+    <span class="pill" onclick="setFilter('Range',this)">Trend Range</span>
+    <span class="pill" onclick="setFilter('Strong',this)">Strong</span>
+  </div>
+
+  <div class="search">
+    <i class="ti ti-search"></i>
+    <input type="text" id="searchInput" placeholder="Search stock…" oninput="renderCards()">
+  </div>
+
+  <div class="count" id="count-label"></div>
+  <div class="cards" id="cardsContainer"></div>
+
+  <div class="disclaimer">
+    <strong>⚠️ Disclaimer</strong>
+    This analysis is generated strictly for educational and analytical purposes only. It does NOT constitute investment advice, trading advice, or a recommendation to buy or sell any security or derivative instrument. Options trading involves substantial risk and may not be suitable for all participants. Readers are advised to exercise independent judgment and consult a SEBI-registered financial advisor before taking any trading or investment decisions. STWP assumes no responsibility for any financial loss arising from the use of this analysis.
+  </div>
+</div>
+
+<script>
+const stocks = [
+  {name:"INDIGO",ref:5022,inv_r:4870.39,up1_r:5173.61,up2_r:5325.22,inv_s:4812.85,up1_s:5440.3,up2_s:5754.02,sentiment:"Neutral",trend:"Up",rsi:70.44,rsiLabel:"Overbought / Euphoria",volume:"Normal",volx:0.96,change:2.73,momentum:"Moderate",risk:"High",vol_out:"Moderate"},
+  {name:"FLUOROCHEM",ref:3920.5,inv_r:3661.13,up1_r:4179.87,up2_r:4439.24,inv_s:3298.01,up1_s:5165.48,up2_s:6099.21,sentiment:"Bullish",trend:"Up",rsi:64.96,rsiLabel:"Strong",volume:"High Volume",volx:4.09,change:4.4,momentum:"Strong",risk:"High",vol_out:"High"},
+  {name:"CPPLUS",ref:3515.6,inv_r:3365.66,up1_r:3665.54,up2_r:3815.48,inv_s:3328.17,up1_s:3808.81,up2_s:4028.72,sentiment:"Neutral",trend:"Range",rsi:75.42,rsiLabel:"Overbought / Euphoria",volume:"Low Volume",volx:0.68,change:4.94,momentum:"Moderate",risk:"High",vol_out:"Low"},
+  {name:"ICICIAMC",ref:3455,inv_r:3265.87,up1_r:3644.13,up2_r:3833.26,inv_s:3141.8,up1_s:4081.4,up2_s:4551.2,sentiment:"Bullish",trend:"Up",rsi:62.07,rsiLabel:"Strong",volume:"Above Avg",volx:1.38,change:5.57,momentum:"Strong",risk:"High",vol_out:"Moderate"},
+  {name:"KAYNES",ref:3399,inv_r:3225.99,up1_r:3572.01,up2_r:3745.02,inv_s:3064.74,up1_s:4067.51,up2_s:4568.89,sentiment:"Bullish",trend:"Up",rsi:53.14,rsiLabel:"Healthy",volume:"High Volume",volx:1.61,change:4.22,momentum:"Strong",risk:"High",vol_out:"High"},
+  {name:"TRENT",ref:3192,inv_r:3097.1,up1_r:3286.9,up2_r:3381.8,inv_s:2964.24,up1_s:3647.52,up2_s:3989.16,sentiment:"Neutral",trend:"Range",rsi:40.82,rsiLabel:"Healthy",volume:"High Volume",volx:3.05,change:2.48,momentum:"Strong",risk:"High",vol_out:"High"},
+  {name:"ACUTAAS",ref:3147.6,inv_r:2997.95,up1_r:3297.25,up2_r:3446.9,inv_s:2960.54,up1_s:3432.41,up2_s:3646.02,sentiment:"Neutral",trend:"Range",rsi:58.01,rsiLabel:"Healthy",volume:"Normal",volx:0.79,change:4.55,momentum:"Moderate",risk:"High",vol_out:"Low"},
+  {name:"LUPIN",ref:2337.9,inv_r:2277.13,up1_r:2398.67,up2_r:2459.44,inv_s:2264.98,up1_s:2483.75,up2_s:2593.13,sentiment:"Bullish",trend:"Up",rsi:59.04,rsiLabel:"Healthy",volume:"Normal",volx:1,change:2.43,momentum:"Strong",risk:"High",vol_out:"Moderate"},
+  {name:"GLAXO",ref:2276.1,inv_r:2185.11,up1_r:2367.09,up2_r:2458.08,inv_s:2102.49,up1_s:2623.32,up2_s:2883.73,sentiment:"Bullish",trend:"Up",rsi:52.96,rsiLabel:"Healthy",volume:"High Volume",volx:1.59,change:3.02,momentum:"Strong",risk:"High",vol_out:"High"},
+  {name:"ICICIGI",ref:1844,inv_r:1783,up1_r:1905,up2_r:1966,inv_s:1767.75,up1_s:1958.78,up2_s:2044.86,sentiment:"Bullish",trend:"Up",rsi:58.88,rsiLabel:"Healthy",volume:"Normal",volx:0.78,change:2.71,momentum:"Strong",risk:"High",vol_out:"Low"},
+  {name:"MFSL",ref:1697,inv_r:1630.17,up1_r:1763.83,up2_r:1830.66,inv_s:1556.66,up1_s:1977.69,up2_s:2188.2,sentiment:"Bullish",trend:"Up",rsi:58.95,rsiLabel:"Healthy",volume:"High Volume",volx:1.75,change:3.46,momentum:"Strong",risk:"High",vol_out:"High"},
+  {name:"DEEPAKNTR",ref:1672.4,inv_r:1610.35,up1_r:1734.45,up2_r:1796.5,inv_s:1536.14,up1_s:1944.92,up2_s:2149.32,sentiment:"Neutral",trend:"Range",rsi:46.32,rsiLabel:"Healthy",volume:"High Volume",volx:1.83,change:2.66,momentum:"Strong",risk:"High",vol_out:"High"},
+  {name:"ADANIGREEN",ref:1520,inv_r:1462.64,up1_r:1577.36,up2_r:1634.72,inv_s:1448.3,up1_s:1602.6,up2_s:1664.55,sentiment:"Neutral",trend:"Range",rsi:61.59,rsiLabel:"Strong",volume:"Low Volume",volx:0.59,change:2.8,momentum:"Weak",risk:"High",vol_out:"Low"},
+  {name:"TORNTPOWER",ref:1459,inv_r:1406.93,up1_r:1511.07,up2_r:1563.14,inv_s:1388.39,up1_s:1600.21,up2_s:1706.12,sentiment:"Bullish",trend:"Up",rsi:48.21,rsiLabel:"Healthy",volume:"Above Avg",volx:1.13,change:2.93,momentum:"Strong",risk:"High",vol_out:"Moderate"},
+  {name:"OLECTRA",ref:1454,inv_r:1339.7,up1_r:1568.3,up2_r:1682.6,inv_s:1179.68,up1_s:2002.64,up2_s:2414.12,sentiment:"Bullish",trend:"Up",rsi:68.43,rsiLabel:"Strong",volume:"High Volume",volx:3.74,change:6.77,momentum:"Strong",risk:"High",vol_out:"High"},
+  {name:"SYRMA",ref:1352.2,inv_r:1297.97,up1_r:1406.43,up2_r:1460.66,inv_s:1273.33,up1_s:1509.94,up2_s:1628.25,sentiment:"Neutral",trend:"Up",rsi:78.95,rsiLabel:"Overbought / Euphoria",volume:"Above Avg",volx:1.01,change:3.74,momentum:"Moderate",risk:"High",vol_out:"Moderate"},
+  {name:"KPRMILL",ref:1208.7,inv_r:1044.61,up1_r:1372.79,up2_r:1536.88,inv_s:736.12,up1_s:2153.86,up2_s:2862.73,sentiment:"Neutral",trend:"Up",rsi:75.38,rsiLabel:"Overbought / Euphoria",volume:"High Volume",volx:15.49,change:13.72,momentum:"Strong",risk:"High",vol_out:"High"},
+  {name:"ABSLAMC",ref:1170.1,inv_r:1096.25,up1_r:1243.95,up2_r:1317.8,inv_s:1046.92,up1_s:1416.46,up2_s:1601.24,sentiment:"Bullish",trend:"Up",rsi:64.17,rsiLabel:"Strong",volume:"Above Avg",volx:1.39,change:6.3,momentum:"Strong",risk:"High",vol_out:"Moderate"},
+  {name:"FINCABLES",ref:1173,inv_r:1113.93,up1_r:1232.07,up2_r:1291.14,inv_s:1070.93,up1_s:1377.15,up2_s:1530.26,sentiment:"Bullish",trend:"Up",rsi:64.25,rsiLabel:"Strong",volume:"Above Avg",volx:1.44,change:3.45,momentum:"Strong",risk:"High",vol_out:"Moderate"},
+  {name:"GODREJIND",ref:1126,inv_r:1041.83,up1_r:1210.17,up2_r:1294.34,inv_s:923.99,up1_s:1530.02,up2_s:1833.03,sentiment:"Neutral",trend:"Range",rsi:58.1,rsiLabel:"Healthy",volume:"High Volume",volx:4.24,change:5.61,momentum:"Strong",risk:"High",vol_out:"High"},
+  {name:"MAXHEALTH",ref:1095.6,inv_r:1025.06,up1_r:1166.14,up2_r:1236.68,inv_s:934.77,up1_s:1417.26,up2_s:1658.51,sentiment:"Bullish",trend:"Up",rsi:69.67,rsiLabel:"Strong",volume:"High Volume",volx:1.9,change:6.27,momentum:"Strong",risk:"High",vol_out:"High"}
+];
+
+let activeFilter='all';
+let openCards=new Set();
+function fmt(n){return Number(n).toLocaleString('en-IN',{maximumFractionDigits:2});}
+function rsiColor(v){if(v>=70)return'red';if(v>=60)return'amber';return'';}
+
+function renderCards(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const container=document.getElementById('cardsContainer');
+  const filtered=stocks.filter(s=>{
+    const matchQ=s.name.toLowerCase().includes(q);
+    if(activeFilter==='all')return matchQ;
+    if(activeFilter==='Bullish')return matchQ&&s.sentiment==='Bullish';
+    if(activeFilter==='Neutral')return matchQ&&s.sentiment==='Neutral';
+    if(activeFilter==='Up')return matchQ&&s.trend==='Up';
+    if(activeFilter==='Range')return matchQ&&s.trend==='Range';
+    if(activeFilter==='Strong')return matchQ&&s.momentum==='Strong';
+    return matchQ;
+  });
+  document.getElementById('count-label').textContent=filtered.length+' stock'+(filtered.length!==1?'s':'')+' shown';
+  if(filtered.length===0){container.innerHTML='<div class="no-results">No stocks match your filter.</div>';return;}
+  container.innerHTML=filtered.map(s=>{
+    const isOpen=openCards.has(s.name);
+    const rc=rsiColor(s.rsi);
+    const sentBadge=s.sentiment==='Bullish'?'badge-bull':'badge-neut';
+    return `<div class="card">
+      <div class="card-header">
+        <span class="stock-name">${s.name}</span>
+        <div class="badges">
+          <span class="badge ${sentBadge}">${s.sentiment}</span>
+          <span class="badge badge-chg">+${s.change}%</span>
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">Reference</div>
+          <div class="metric-val">₹${fmt(s.ref)}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">RSI · ${s.rsi}</div>
+          <div class="metric-val">${s.rsiLabel}</div>
+          <div class="rsi-bar-wrap"><div class="rsi-bar ${rc}" style="width:${Math.min(s.rsi,100)}%"></div></div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Trend</div>
+          <div class="metric-val">${s.trend}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Momentum</div>
+          <div class="metric-val">${s.momentum}</div>
+        </div>
+      </div>
+      <button class="toggle-btn" onclick="toggleCard('${s.name}')">
+        <i class="ti ti-${isOpen?'chevron-up':'chevron-down'}"></i>
+        ${isOpen?'Hide details':'View full levels'}
+      </button>
+      <div class="expand-section ${isOpen?'open':''}" id="expand-${s.name}">
+        <div class="section-title">Reference setup</div>
+        <div class="level-row"><span class="level-label">Invalidation</span><span class="dn-val">₹${fmt(s.inv_r)}</span></div>
+        <div class="level-row"><span class="level-label">Upside target 1</span><span class="up-val">₹${fmt(s.up1_r)}</span></div>
+        <div class="level-row"><span class="level-label">Upside target 2</span><span class="up-val">₹${fmt(s.up2_r)}</span></div>
+        <div class="section-title">Swing setup (2–5 days)</div>
+        <div class="level-row"><span class="level-label">Invalidation</span><span class="dn-val">₹${fmt(s.inv_s)}</span></div>
+        <div class="level-row"><span class="level-label">Upside target 1</span><span class="up-val">₹${fmt(s.up1_s)}</span></div>
+        <div class="level-row"><span class="level-label">Upside target 2</span><span class="up-val">₹${fmt(s.up2_s)}</span></div>
+        <div class="section-title">Final outlook</div>
+        <div class="outlook-grid">
+          <div class="outlook-item">Momentum<div class="outlook-val">${s.momentum}</div></div>
+          <div class="outlook-item">Trend<div class="outlook-val">${s.trend}</div></div>
+          <div class="outlook-item">Risk<div class="outlook-val">${s.risk}</div></div>
+          <div class="outlook-item">Volume<div class="outlook-val">${s.vol_out}</div></div>
+        </div>
+        <div class="section-title" style="margin-top:10px">Volume info</div>
+        <div class="level-row"><span class="level-label">Vol multiplier</span><span>${s.volx}x · ${s.volume}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleCard(name){
+  if(openCards.has(name))openCards.delete(name);
+  else openCards.add(name);
+  renderCards();
+}
+
+function setFilter(val,el){
+  activeFilter=val;
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  renderCards();
+}
+
+renderCards();
+</script>
+</body>
+</html>
